@@ -73,7 +73,7 @@
 
             languages.javascript = {
               enable = true;
-              pnpm = {
+              bun = {
                 enable = true;
               };
             };
@@ -81,10 +81,18 @@
             languages.typescript.enable = true;
 
             pre-commit.hooks = {
-              nixfmt.package = pkgs.nixfmt-rfc-style;
-              nixfmt.enable = true;
-              clippy.enable = true;
-              clippy.files = "/backend/*";
+              nixfmt = {
+                enable = true;
+                package = pkgs.nixfmt-rfc-style;
+              };
+              clippy = {
+                enable = true;
+                files = "/backend/*";
+              };
+              rome = {
+                enable = true;
+                files = "/frontend/*";
+              };
             };
 
             dotenv.enable = true;
