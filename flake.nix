@@ -71,10 +71,20 @@
               ];
             };
 
+            languages.javascript = {
+              enable = true;
+              pnpm = {
+                enable = true;
+              };
+            };
+
+            languages.typescript.enable = true;
+
             pre-commit.hooks = {
               nixfmt.package = pkgs.nixfmt-rfc-style;
               nixfmt.enable = true;
               clippy.enable = true;
+              clippy.files = "/backend/*";
             };
 
             dotenv.enable = true;

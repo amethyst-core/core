@@ -1,2 +1,2 @@
-# Core
-The backend core that runs 
+# Panel
+The Amethyst Panel for Amethyst core
