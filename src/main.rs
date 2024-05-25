@@ -16,8 +16,10 @@ async fn main() {
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
     let app = create_router().layer(cors);
-
-    println!("🔮 Server has successfully started");
+    println!(
+        "🔮 {}",
+        "\x1b[35mAmethyst Core has successfully started\x1b[0m"
+    );
     let listner = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
     axum::serve(listner, app).await.unwrap();
 }
