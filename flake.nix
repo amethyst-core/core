@@ -45,13 +45,15 @@
             name = "Amethyst-core/core";
             difftastic.enable = true;
             imports = [ ];
-            packages = lib.optionals pkgs.stdenv.isDarwin (
-              with pkgs.darwin.apple_sdk.frameworks;
-              [
-                Security
-                SystemConfiguration
-              ]
-            );
+            packages =
+              lib.optionals pkgs.stdenv.isDarwin (
+                with pkgs.darwin.apple_sdk.frameworks;
+                [
+                  Security
+                  SystemConfiguration
+                ]
+              )
+              ++ ([ pkgs.cargo-watch ]);
 
             env = {
 
