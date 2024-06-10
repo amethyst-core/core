@@ -1,4 +1,3 @@
-mod docker;
 mod handlers;
 mod routes;
 
