@@ -5,7 +5,7 @@ use axum::{
 use serde_json::json;
 
 /// This function is used to provide the health of the API.
-pub async fn status() -> impl IntoResponse {
+pub async fn get_status() -> impl IntoResponse {
     Json(json!({
         "status": "ok",
     }))
