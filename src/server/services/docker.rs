@@ -3,6 +3,8 @@
 extern crate bollard;
 extern crate futures_util;
 
+use crate::db::queries::{insert_server, delete_server};
+
 use bollard::Docker;
 use bollard::image::CreateImageOptions;
 use bollard::container::{ Config , CreateContainerOptions, ListContainersOptions, StartContainerOptions };
@@ -39,12 +41,12 @@ impl DockerClient {
         Ok(())
     }
 
-    pub async fn create_container(&self, server_type: &str, server_version: &str, port: &str) -> Result<String, bollard::errors::Error> {
+    pub async fn create_container(&self, server_type: &str, server_version: &str, port: &str, pool: &sqlx::SqlitePool) -> Result<String, bollard::errors::Error> {
         
         // Generate a random string for the container name
         let random_string: String = thread_rng()
             .sample_iter(rand::distributions::Uniform::new_inclusive(b'a', b'z'))
-            .take(32)
+            .take(12)
             .map(|c| c as char)
             .collect();
 
@@ -83,13 +85,21 @@ impl DockerClient {
         // Start the container
         let _ = &self.docker.start_container(&container_name, None::<StartContainerOptions<String>>).await?;
 
+        // Insert the container into the database
+        if let Err(e) = insert_server(&pool, &container.id, &container_name).await {
+            eprintln!("Failed to insert server: {}", e);
+        } else {
+            println!("Server inserted successfully with container name: {}", container_name);
+        }
+
         Ok(container.id.to_string())
     }
 
     pub async fn list_containers(&self) -> Result<Vec<bollard::models::ContainerSummary>, bollard::errors::Error> {
         let options = Some(ListContainersOptions::<String> {
             all: true,
-            // Only list containers with the name "amethyst-"
+            // TODO: Get the list of servers from the database
+            // Return those only.
             filters: HashMap::from([("name".to_string(), vec!["amethyst-".to_string()])]),
             ..Default::default()
         });
@@ -114,8 +124,12 @@ impl DockerClient {
         Ok(())
     }
 
-    pub async fn delete_container(&self, container_id: &str) -> Result<String, bollard::errors::Error> {
+    pub async fn delete_container(&self, container_id: &str, pool: &sqlx::SqlitePool) -> Result<String, bollard::errors::Error> {
         self.docker.remove_container(container_id, None).await?;
+        // Delete the container from the database
+        if let Err(e) = delete_server(&pool, container_id).await {
+            eprintln!("Failed to delete server: {}", e);
+        }
         Ok(container_id.to_string())
     }
 
