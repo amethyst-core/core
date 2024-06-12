@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use axum::{
     response::IntoResponse,
     Json,
