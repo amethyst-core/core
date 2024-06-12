@@ -1,3 +1,10 @@
+#![allow(dead_code)]
+
+
+use axum::extract::State;
+use crate::api::routes::AppState;
+use crate::api::handlers::types::CreateInstanceRequest;
+
 use axum::{
     response::IntoResponse,
     Json,
@@ -17,10 +24,25 @@ pub async fn get_instance(instance_id: axum::extract::Path<String>) -> impl Into
     }))
 }
 
-pub async fn create_instance() -> impl IntoResponse {
-    Json(json!({
-        "status": "ok",
-    }))
+pub async fn create_instance(State(state): State<AppState>, Json(payload): Json<CreateInstanceRequest>) -> impl IntoResponse {
+    let pool = state.pool;
+    let docker = state.docker;
+
+    match docker.create_container(&payload.server_type, &payload.server_version, &payload.port, &pool).await {
+        Ok(container_id) => {
+            Json(json!({
+                "status": "ok",
+                "container_id": container_id,
+            }))
+        },
+        Err(e) => {
+            Json(json!({
+                "status": "error",
+                "error": e.to_string(),
+            }))
+        },
+    }
+
 }
 
 pub async fn update_instance() -> impl IntoResponse {

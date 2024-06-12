@@ -15,6 +15,15 @@ use std::collections::HashMap;
 
 pub struct DockerClient {
     docker: Docker,
+    
+}
+
+impl Clone for DockerClient {
+    fn clone(&self) -> Self {
+        Self {
+            docker: self.docker.clone(),
+        }
+    }
 }
 
 impl DockerClient {

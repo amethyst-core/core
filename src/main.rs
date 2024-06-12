@@ -23,32 +23,9 @@ use tower_http::cors::CorsLayer;
 async fn main() {
 
     let pool = initialize_db().await.expect("Failed to initialize database");
+    let docker = DockerClient::new().expect("Failed to create Docker client");
     create_schema(&pool).await.expect("Failed to create schema");
-    let docker_client = DockerClient::new().expect("Failed to create Docker client");
     
-    // Database Examples
-    
-    // Docker Examples
-    
-    // docker_client.pull_image().await.expect("Failed to pull image");
-    
-    // match docker_client.create_container("PAPER", "1.19.1", "25570", &pool).await {
-    //         Ok(container_name) => {
-    //     },
-    //     Err(e) => eprintln!("Error creating container: {}", e),
-    // }
-
-    // match docker_client.list_containers().await {
-    //     Ok(containers) => {
-        //         for container in containers {
-    //             println!("{:?}", container);
-    //         }
-    //     },
-    //     Err(e) => eprintln!("Error: {}", e),
-    // }
-
-    // docker_client.delete_container("846b2a5db02520e0899d643a9d2209885124629ebdafde369d845ce7fcc63aa9", &pool).await.expect("Failed to start container");
-
     // Set up CORS policy
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
@@ -57,7 +34,7 @@ async fn main() {
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
     
     // Create the router
-    let app = router().layer(cors);
+    let app = router(pool, docker).layer(cors);
     
     // Print startup message
     println!(
