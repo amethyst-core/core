@@ -16,4 +16,5 @@ pub enum HandlerError {
 pub struct PlayersResponse {
     pub player_active: Option<u32>,
     pub player_max: Option<u32>,
+    pub player_list: Option<Vec<String>>,
 }

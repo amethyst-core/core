@@ -24,7 +24,7 @@ pub async fn list_players(State(state): State<AppState>, Json(payload): Json<Man
                 "status": "ok",
                 "player_max": players_response.player_max.unwrap_or_default(),
                 "player_active": players_response.player_active.unwrap_or_default(),
-                "players": []
+                "players": players_response.player_list.unwrap_or_default()
             }))
         },
         Err(err) => {
