@@ -3,19 +3,21 @@
 extern crate bollard;
 extern crate futures_util;
 
-use crate::db::queries::{insert_server, delete_server};
+use crate::db::queries::{insert_server, delete_server, get_container_name, insert_image};
 
-use bollard::Docker;
+use bollard::{container, Docker};
 use bollard::image::CreateImageOptions;
-use bollard::container::{ Config , CreateContainerOptions, ListContainersOptions, StartContainerOptions };
+use bollard::container::{ Config , CreateContainerOptions, ListContainersOptions, StartContainerOptions, LogOutput };
+use bollard::exec::{CreateExecOptions, CreateExecResults, StartExecOptions, StartExecResults};
 use futures::stream::StreamExt;
 use rand::{thread_rng, Rng};
+use sqlx::pool;
 use std::default::Default;
 use std::collections::HashMap;
 
+use indicatif::{ProgressBar, ProgressStyle};
 pub struct DockerClient {
     docker: Docker,
-    
 }
 
 impl Clone for DockerClient {
@@ -40,13 +42,10 @@ impl DockerClient {
         };
 
         let mut stream = self.docker.create_image(Some(options), None, None);
+        // TODO: add the image to db with status as pulling
 
-        while let Some(create_image_response) = stream.next().await {
-            if let Some(status) = create_image_response.unwrap().status {
-                println!("{}", status);
-            }
-            // TODO: Show progress bar
-        }
+        while let Some(_create_image_response) = stream.next().await {}
+
         Ok(())
     }
 
@@ -109,6 +108,7 @@ impl DockerClient {
             all: true,
             // TODO: Get the list of servers from the database
             // Return those only.
+            // Pass only values that required
             filters: HashMap::from([("name".to_string(), vec!["amethyst-".to_string()])]),
             ..Default::default()
         });
@@ -117,9 +117,10 @@ impl DockerClient {
         
         Ok(containers)
     }
-    
+
     pub async fn start_container(&self, container_id: &str) -> Result<(), bollard::errors::Error> {
         self.docker.start_container::<String>(container_id, None).await?;
+        // TODO: beautify
         Ok(())
     }
 
@@ -142,4 +143,41 @@ impl DockerClient {
         Ok(container_id.to_string())
     }
 
+    pub async fn exec_command(&self, container_id: &str, command: &str, pool: &sqlx::SqlitePool) -> Result<String, bollard::errors::Error> {
+
+        // get container_name from pool using container_id
+        let container_name = get_container_name(&pool, container_id).await.unwrap();
+
+        let exec_create = CreateExecOptions {
+            cmd: Some(vec![
+                "/usr/local/bin/rcon-cli",
+                command,
+            ]),
+            attach_stdout: Some(true),
+            attach_stderr: Some(true), // Attach stderr to capture error output
+            ..Default::default()
+        };
+
+        // get container_name from pool using container_id
+
+        let exec_id = &self.docker.create_exec(&container_name, exec_create).await?.id;
+        let start_options = StartExecOptions {
+            detach: false, // Set detach to false to capture the output
+            ..Default::default()
+        };
+
+        let exec_stream = self.docker.start_exec(exec_id, Some(start_options)).await?;
+         let mut output_str = String::new();
+
+         if let StartExecResults::Attached { mut output, .. } = exec_stream {
+            while let Some(msg) = output.next().await {
+                if let Ok(LogOutput::StdOut { message }) = msg {
+                    output_str = String::from_utf8_lossy(&message).trim_end().to_string();
+                }
+            }
+        }
+        
+        Ok(output_str)      
+
+    }
 }

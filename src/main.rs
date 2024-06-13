@@ -25,7 +25,7 @@ async fn main() {
     let pool = initialize_db().await.expect("Failed to initialize database");
     let docker = DockerClient::new().expect("Failed to create Docker client");
     create_schema(&pool).await.expect("Failed to create schema");
-    
+     
     // Set up CORS policy
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
