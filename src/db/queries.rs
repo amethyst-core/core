@@ -1,5 +1,5 @@
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions, SqliteConnectOptions};
-use sqlx::Error;
+use sqlx::{Row, Error};
 
 pub async fn initialize_db() -> Result<SqlitePool, Error> {
     let pool = SqlitePoolOptions::new()
@@ -15,11 +15,12 @@ pub async fn initialize_db() -> Result<SqlitePool, Error> {
 pub async fn insert_server(pool: &SqlitePool, container_id: &str, instance_name: &str) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
-        INSERT INTO instances (containerId, instanceName) 
-        VALUES (?, ?);
+        INSERT INTO instances (containerId, containerName, instanceName) 
+        VALUES (?, ?, ?);
         "#
     )
     .bind(container_id)
+    .bind(instance_name) 
     .bind(instance_name)
     .execute(pool)
     .await?;
@@ -33,6 +34,35 @@ pub async fn delete_server(pool: &SqlitePool, container_id: &str) -> Result<(), 
         "#
     )
     .bind(container_id)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn get_container_name(pool: &SqlitePool, container_id: &str) -> Result<String, sqlx::Error> {
+    let row = sqlx::query(
+        r#"
+        SELECT containerName FROM instances WHERE containerId = ?;
+        "#
+    )
+    .bind(container_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(row.try_get("containerName")?)
+}
+
+pub async fn insert_image(pool: &SqlitePool, image_name: &str, image_tag: &str, image_docker_id: &str, image_status: &str) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        r#"
+        INSERT INTO images (imageName, imageTag, imageDockerId, imageStatus) 
+        VALUES (?, ?, ?, ?);
+        "#
+    )
+    .bind(image_name)
+    .bind(image_tag)
+    .bind(image_docker_id)
+    .bind(image_status)
     .execute(pool)
     .await?;
     Ok(())
