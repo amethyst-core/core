@@ -12,6 +12,7 @@ pub async fn pull(State(state): State<AppState>) -> impl IntoResponse {
     let docker = state.docker;
 
     task::spawn(async move {
+        // TODO
         println!("Pulling image...");
         let _ = docker.pull_image().await;
         println!("Image pulled.");
