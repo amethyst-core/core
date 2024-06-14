@@ -43,20 +43,20 @@ pub struct State {
 
 #[derive(Serialize)]
 pub struct InstanceConfig {
-    pub eula: Option<bool>,
-    pub server_type: Option<String>,
-    pub version: Option<String>,
+    pub eula: bool,
+    pub server_type: String,
+    pub version: String,
 }
 
 #[derive(Serialize)]
 pub struct Instance {
     pub container_id: String,
-    pub image_id: Option<String>,
-    pub created: Option<String>,
+    pub image_id: String,
+    pub created: String,
     pub instance_name: String,
     pub state: State,
     pub config: InstanceConfig,
-    pub ports: Option<HashMap<String, HashMap<(), ()>>>,
+    pub ports: HashMap<String, HashMap<(), ()>>,
     // pub address: Option<String>,
     // pub port: Option<Vec<u16>>,
     pub players: Players,
@@ -66,11 +66,11 @@ pub struct Instance {
 pub struct InstanceSummary {
     pub container_id: String,
     pub instance_name: String,
-    pub created: Option<i64>,
-    pub image_id: Option<String>,
-    pub state: Option<String>,
+    pub created: i64,
+    pub image_id: String,
+    pub state: String,
     pub address: String,
-    pub port: Option<Vec<u16>>,
+    pub port: Vec<u16>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
