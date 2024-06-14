@@ -7,3 +7,4 @@ Cargo.lock
 .direnv
 .pre-commit-config.yaml
 amethyst.db
+examples/

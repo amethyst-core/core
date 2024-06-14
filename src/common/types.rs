@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::fmt;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ServerTypes {
@@ -33,20 +34,48 @@ impl fmt::Display for ServerTypes {
 }
 
 #[derive(Serialize)]
+pub struct State {
+    pub started_at: Option<String>,
+    pub running: Option<bool>,
+    pub restarting: Option<bool>,
+    pub dead: Option<bool>,
+}
+
+#[derive(Serialize)]
+pub struct InstanceConfig {
+    pub eula: Option<bool>,
+    pub server_type: Option<String>,
+    pub version: Option<String>,
+}
+
+#[derive(Serialize)]
 pub struct Instance {
     pub container_id: String,
+    pub image_id: Option<String>,
+    pub created: Option<String>,
     pub instance_name: String,
-    pub address: Option<String>,
-    pub port: Option<u16>,
-    pub server_type: ServerTypes,
-    pub server_version: String,
+    pub state: State,
+    pub config: InstanceConfig,
+    pub ports: Option<HashMap<String, HashMap<(), ()>>>,
+    // pub address: Option<String>,
+    // pub port: Option<Vec<u16>>,
     pub players: Players,
 }
 
+#[derive(Serialize)]
+pub struct InstanceSummary {
+    pub container_id: String,
+    pub instance_name: String,
+    pub created: Option<i64>,
+    pub image_id: Option<String>,
+    pub state: Option<String>,
+    pub address: String,
+    pub port: Option<Vec<u16>>,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Players {
-    pub player_active: Option<u32>,
-    pub player_max: Option<u32>,
-    pub player_list: Option<Vec<String>>,
+    pub player_active: u32,
+    pub player_max: u32,
+    pub player_list: Vec<String>,
 }

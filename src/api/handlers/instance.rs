@@ -5,25 +5,54 @@ use crate::api::handlers::types::{ CreateInstanceRequest, ManageInstanceRequest 
 use crate::common::types;
 use crate::common::errors;
 
+use crate::server::handlers::instance;
+
 use axum::{ response::IntoResponse, Json };
 use serde_json::json;
 
 pub async fn list_instance(State(state): State<AppState>) -> impl IntoResponse {
-    let docker = state.docker;
-    let containers = docker.list_containers().await.unwrap();
 
-    Json(json!({
-        "status": "ok",
-        "containers": containers
-    }))
+    match instance::list_instances(&state.docker, &state.pool).await {
+        Ok(instances) => {
+            Json(
+                json!({
+                "status": "ok",
+                "response": instances
+            })
+            )
+        }
+        Err(err) => {
+            Json(
+                json!({
+                "status": "error",
+                "message": err.to_string()
+            })
+            )
+        }
+    }
 }
 
-pub async fn get_instance(instance_id: axum::extract::Path<String>) -> impl IntoResponse {
-    // TODO
-    Json(json!({
-        "status": "ok",
-        "instance_id": instance_id.0,
-    }))
+pub async fn get_instance(
+        State(state): State<AppState>,
+        Json(payload): Json<ManageInstanceRequest>
+    ) -> impl IntoResponse {
+
+    match instance::get_instance(&state.docker, &state.pool, &payload.container_id).await {
+        Ok(instance) => return Json(
+            json!({
+                "status": "ok",
+                "response": instance
+            }
+        )),
+        Err(err) => {
+            return Json(
+                json!({
+                "status": "error",
+                "message": err.to_string()
+            }))
+        }
+    };  
+
 }
 
 pub async fn create_instance(
@@ -57,11 +86,10 @@ pub async fn create_instance(
             &pool
         ).await
     {
-        Ok(container) => {
+        Ok(_) => {
             Json(
                 json!({
                 "status": "ok",
-                "instance": container,
             })
             )
         }

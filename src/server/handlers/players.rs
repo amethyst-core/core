@@ -44,17 +44,13 @@ pub async fn list_players(
                 match (current_players, max_players) {
                     (current, max) =>
                         types::Players {
-                            player_active: Some(current.parse().unwrap()),
-                            player_max: Some(max.parse().unwrap()),
-                            player_list: Some(player_list),
+                            player_active: current.parse().unwrap(),
+                            player_max: max.parse().unwrap(),
+                            player_list: player_list,
                         },
                 }
             } else {
-                types::Players {
-                    player_active: None,
-                    player_max: None,
-                    player_list: None,
-                }
+                return Err(errors::Errors::FetchPlayers("Invalid console output".to_string()));
             }
         }
         Err(_) => {

@@ -11,10 +11,8 @@ pub async fn list_players(
     State(state): State<AppState>,
     Json(payload): Json<ManageInstanceRequest>
 ) -> impl IntoResponse {
-    let docker = state.docker;
-    let container_id = &payload.container_id;
 
-    match players::list_players(&docker, &container_id).await {
+    match players::list_players(&state.docker, &payload.container_id).await {
         Ok(players_response) => {
             Json(
                 json!({

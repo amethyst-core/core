@@ -13,6 +13,7 @@ use bollard::container::{
     CreateContainerOptions,
     ListContainersOptions,
     StartContainerOptions,
+    InspectContainerOptions,
     LogOutput,
 };
 use bollard::exec::{ CreateExecOptions, StartExecOptions, StartExecResults };
@@ -63,7 +64,7 @@ impl DockerClient {
         server_version: &str,
         port: &str,
         pool: &sqlx::SqlitePool
-    ) -> Result<types::Instance, errors::Errors> {
+    ) -> Result<(), errors::Errors> {
         // Generate a random string for the container name
         let random_string: String = thread_rng()
             .sample_iter(rand::distributions::Uniform::new_inclusive(b'a', b'z'))
@@ -118,19 +119,7 @@ impl DockerClient {
                 if let Err(e) = insert_server(&pool, &container_data.id, &container_name).await {
                     Err(errors::Errors::DatabaseInsertion(e.to_string()))
                 } else {
-                    Ok(types::Instance {
-                        container_id: container_data.id.clone(),
-                        instance_name: format!("amethyst-{}", random_string),
-                        address: None,
-                        port: None,
-                        server_type: server_type,
-                        server_version: server_version.to_string(),
-                        players: types::Players {
-                            player_active: None,
-                            player_max: None,
-                            player_list: None,
-                        },
-                    })
+                    Ok(())
                 }
             },
             Err(e) => {
@@ -139,14 +128,25 @@ impl DockerClient {
         }
     }
 
+    pub async fn inspect_container(
+        &self,
+        container_id: &str
+    ) -> Result<bollard::models::ContainerInspectResponse, bollard::errors::Error> {
+        let options = Some(InspectContainerOptions {
+            size: false,
+            ..Default::default()
+        });
+
+        let container = self.docker.inspect_container(container_id, options).await?;
+
+        Ok(container)
+    }
+
     pub async fn list_containers(
         &self
     ) -> Result<Vec<bollard::models::ContainerSummary>, bollard::errors::Error> {
         let options = Some(ListContainersOptions::<String> {
             all: true,
-            // TODO: Get the list of servers from the database
-            // Return those only.
-            // Pass only values that required
             filters: HashMap::from([("name".to_string(), vec!["amethyst-".to_string()])]),
             ..Default::default()
         });
@@ -204,7 +204,7 @@ impl DockerClient {
         let exec_create = CreateExecOptions {
             cmd: Some(vec!["/usr/local/bin/rcon-cli", command]),
             attach_stdout: Some(true),
-            attach_stderr: Some(true), // Attach stderr to capture error output
+            attach_stderr: Some(true),
             ..Default::default()
         };
 
